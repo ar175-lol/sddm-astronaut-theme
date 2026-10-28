@@ -48,10 +48,11 @@ Item {
                 text: model.name
                 font.pointSize: root.font.pointSize * 0.8
                 font.family: root.font.family
-                color: config.DropdownTextColor
+                color: selectSession.highlightedIndex === index && config.HighlightTextColor ? config.HighlightTextColor : config.DropdownTextColor
             }
 
             background: Rectangle {
+                radius: config.RoundCorners / 4
                 color: selectSession.highlightedIndex === index ? config.DropdownSelectedBackgroundColor : "transparent"
             }
         }
@@ -86,7 +87,7 @@ Item {
             implicitHeight: contentItem.implicitHeight
             width: sessionButton.width
             y: parent.height - 1
-            x:  -popupHandler.width/2 + displayedItem.width/2
+            x: -popupHandler.width/2 + displayedItem.width/2
             padding: 10
 
             contentItem: ListView {
@@ -101,6 +102,7 @@ Item {
             background: Rectangle {
                 radius: config.RoundCorners / 2
                 color: config.DropdownBackgroundColor
+                clip: true
                 layer.enabled: true
             }
 
@@ -131,7 +133,7 @@ Item {
                 when: selectSession.visualFocus
                 PropertyChanges {
                     target: displayedItem
-                    color: config.HoverSessionButtonTextColor
+                    color: HoverSessionButtonTextColor
                 }
             }
         ]
