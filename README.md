@@ -64,6 +64,24 @@ nix flake check github:ar175-lol/sddm-astronaut-theme
 
 The package installs the theme to `share/sddm/themes/sddm-astronaut-theme`.
 
+### Customization
+
+The package can be overridden with a theme name, font family, and custom background:
+
+```nix
+let
+  sddm-theme = inputs.sddm-astronaut-theme.packages.${pkgs.system}.default.override {
+    theme = "astronaut";
+    font = "Monocraft";
+    background = ./wallpaper.png;
+  };
+in ...
+```
+
+- `theme` selects a config from `Themes/` without the `.conf` suffix. The default is `hyprland_kath`.
+- `font` replaces the `Font` setting in the selected config. The font must be installed on the system.
+- `background` copies an image or video into the theme and updates its `Background` setting. Leave it as `null` to keep the theme's bundled background.
+
 ### NixOS
 
 Add this fork as a flake input:
@@ -139,6 +157,8 @@ Just edit this line:
 ConfigFile=Themes/astronaut.conf
 ```
 All available configs are in [Themes](./Themes/) directory.
+
+When using the flake, set `theme = "astronaut"` in the package override instead of editing `metadata.desktop`.
 
 ## Previewing a theme
 
