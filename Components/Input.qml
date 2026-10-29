@@ -239,6 +239,34 @@ Column {
 
         }
 
+        Button {
+            id: userDropdownButton
+
+            width: parent.height
+            height: parent.height
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            z: 2
+            hoverEnabled: true
+            focusPolicy: Qt.NoFocus
+
+            background: Rectangle {
+                color: "transparent"
+                border.color: "transparent"
+            }
+
+            contentItem: Text {
+                text: "\u25BE"
+                color: userDropdownButton.hovered ? config.HoverUserIconColor : config.UserIconColor
+                font.pointSize: root.font.pointSize * 0.7
+                font.family: root.font.family
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
+
+            onClicked: selectUser.popup.open()
+        }
+
         TextField {
             id: username
 
@@ -255,6 +283,7 @@ Column {
             placeholderText: config.TranslatePlaceholderUsername || textConstants.userName
             placeholderTextColor: config.PlaceholderTextColor
             selectByMouse: true
+            readOnly: true
             renderType: Text.QtRendering
 
             onFocusChanged:{
@@ -287,6 +316,17 @@ Column {
                     }
                 }
             ]
+        }
+
+        MouseArea {
+            anchors.fill: username
+            anchors.rightMargin: userDropdownButton.width
+            z: 3
+
+            onClicked: {
+                username.forceActiveFocus()
+                selectUser.popup.open()
+            }
         }
     }
 
