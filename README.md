@@ -1,10 +1,15 @@
 # sddm-astronaut-theme
 
+> [!WARNING]
+> This is a personal fork of [Keyitdev's sddm-astronaut-theme](https://github.com/Keyitdev/sddm-astronaut-theme). The badges, previews, and support links below point to the upstream project.
+
 ![Stars](https://img.shields.io/github/stars/keyitdev/sddm-astronaut-theme?color=dd864a&labelColor=1b1b25&style=for-the-badge)
 ![Forks](https://img.shields.io/github/forks/keyitdev/sddm-astronaut-theme?color=bf616a&labelColor=1b1b25&style=for-the-badge)
 [![Ko-fi](https://img.shields.io/badge/support_me_on_ko--fi-F16061?style=for-the-badge&logo=kofi&logoColor=f5f5f5)](https://ko-fi.com/keyitdev)
 
 [sddm-astronaut-theme](https://github.com/Keyitdev/sddm-astronaut-theme) is a series of themes for the [SDDM](https://github.com/sddm/sddm/) display manager made by **[Keyitdev](https://github.com/Keyitdev)**.
+
+This fork adds a flake/package for Nix, an account picker in the username field, and a custom `hyprland_kath` background. The original theme and most of the previews remain unchanged.
 
 It's written using the latest version of Qt, which is **Qt6**. Its key features include **virtual keyboard support** and an **installation script**. This theme also support **animated wallpapers**. You can easily change its appearance by choosing another of the ten pre-made themes or creating your own. Each of these themes was created by modifying just one file - **[config](./Themes/astronaut.conf)**.
 
@@ -48,52 +53,48 @@ https://github.com/user-attachments/assets/181d48c2-f152-45f5-b568-21145be180f6
 
 ## Installation
 
-### Automatic Installation
+### Nix Flake
+
+This fork provides a flake with the theme package and checks:
 
 ```sh
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/keyitdev/sddm-astronaut-theme/master/setup.sh)"
+nix build github:ar175-lol/sddm-astronaut-theme
+nix flake check github:ar175-lol/sddm-astronaut-theme
 ```
-> Works on distributions using pacman, xbps-install, dnf, zypper.   
-> Remember to always read the scripts you run from the internet.
 
-### NixOS Installation
+The package installs the theme to `share/sddm/themes/sddm-astronaut-theme`.
 
-#### Using System Configuration with Custom Overrides
+### NixOS
 
-While not officially packaged by the upstream maintainers, there is a [community-maintained package](https://search.nixos.org/packages?channel=unstable&query=sddm-astronaut#show=sddm-astronaut) maintained by @DaniD3v, @uxodb, and @qweered. You can install and customize the theme by creating an override of the package in your `configuration.nix`:
+Add this fork as a flake input:
 
 ```nix
-let
-  sddm-astronaut = (pkgs.sddm-astronaut.override {
-    embeddedTheme = "japanese_aesthetic";  # or any other theme
-    themeConfig = {
-      # Customize colors and settings
-      HeaderTextColor = "#d5c4a1";
-      Background = "Backgrounds/your-custom-background.png";
-      # ... other theme configuration options
-    };
-  }).overrideAttrs (oldAttrs: {
-    # Optional: Inject custom background image
-    installPhase = oldAttrs.installPhase + ''
-      chmod u+w $out/share/sddm/themes/sddm-astronaut-theme/Backgrounds/
-      cp ${./relative/path/to/your-custom-background.png} \
-        $out/share/sddm/themes/sddm-astronaut-theme/Backgrounds/your-custom-background.png
-    '';
-  });
-in
 {
-  environment.systemPackages = [ sddm-astronaut ];
-  
+  inputs.sddm-astronaut-theme.url = "github:ar175-lol/sddm-astronaut-theme";
+}
+```
+
+Then add the theme to your NixOS configuration:
+
+```nix
+{inputs, pkgs, ...}: let
+  sddm-theme = inputs.sddm-astronaut-theme.packages.${pkgs.system}.default;
+in {
   services.displayManager.sddm = {
     enable = true;
-    package = pkgs.kdePackages.sddm;
-    extraPackages = with pkgs; [
-      kdePackages.qtmultimedia # Required for video backgrounds/audio
+    theme = "${sddm-theme}/share/sddm/themes/sddm-astronaut-theme";
+    extraPackages = with pkgs.kdePackages; [
+      qtmultimedia
+      qtsvg
+      qtvirtualkeyboard
     ];
-    theme = "sddm-astronaut-theme";
   };
 }
 ```
+
+`qtmultimedia` is required for animated backgrounds, and `qtvirtualkeyboard` provides the on-screen keyboard.
+
+> If `inputs` is not available inside your modules, pass it through `specialArgs` or `extraSpecialArgs`.
 
 ## Manual Installation
 
@@ -113,22 +114,21 @@ sddm qt6-svg-dev qml6-module-qtquick-virtualkeyboard qt6-multimedia-dev qml6-mod
 
 2. Clone this repository
 ```sh
-sudo git clone -b master --depth 1 https://github.com/keyitdev/sddm-astronaut-theme.git /usr/share/sddm/themes/sddm-astronaut-theme
+sudo git clone -b master --depth 1 https://github.com/ar175-lol/sddm-astronaut-theme.git /usr/share/sddm/themes/sddm-astronaut-theme
 ```
-3. Copy fonts to `/usr/share/fonts/`
-```sh
-sudo cp -r /usr/share/sddm/themes/sddm-astronaut-theme/Fonts/* /usr/share/fonts/
-```
-4. Edit `/etc/sddm.conf`
+3. Configure SDDM to use the theme
 ```sh
 echo "[Theme]
 Current=sddm-astronaut-theme" | sudo tee /etc/sddm.conf
 ```
-5. Edit `/etc/sddm.conf.d/virtualkbd.conf`
+4. Enable the virtual keyboard (optional)
 ```sh
 echo "[General]
 InputMethod=qtvirtualkeyboard" | sudo tee /etc/sddm.conf.d/virtualkbd.conf
 ```
+
+> [!NOTE]
+> This fork does not bundle fonts. Install the font used by the selected theme config if it is not already available (for example, `JetBrainsMono Nerd Font`).
 
 ## Selecting a theme
 
@@ -142,11 +142,17 @@ All available configs are in [Themes](./Themes/) directory.
 
 ## Previewing a theme
 
-You can preview the set theme without logging out by runnning:
+You can preview the installed theme without logging out:
 ```sh
 sddm-greeter-qt6 --test-mode --theme /usr/share/sddm/themes/sddm-astronaut-theme/
 ```
-> Note that depending on the system configuration, the preview may differ slightly from the actual login screen.
+
+To preview this checkout directly, run from the repository root:
+```sh
+nix develop --command env QT_QPA_PLATFORM=wayland sddm-greeter-qt6 --test-mode --theme "$PWD"
+```
+
+Note that depending on the system configuration, the preview may differ slightly from the actual login screen.
 
 ## Sources
 
@@ -160,15 +166,15 @@ I also redesigned many of them, but here are links to some of the orginal artist
 - Purple leaves: [wallpaper](https://wallha.com/wallpaper/artwork-abstract-leaves-purple-texture-pattern-1414432), [font](https://fonts.google.com/specimen/Open+Sans/about)
 - Cyberpunk: [wallpaper](https://images5.alphacoders.com/133/1330479.png) by [patrika](https://alphacoders.com/users/profile/227699/patrika), [font](https://www.1001fonts.com/kognigear-font.html)
 - Post-apocalyptic hacker:  [wallpaper](https://images.alphacoders.com/137/thumb-1920-1375178.png) by [patrika](https://alphacoders.com/users/profile/227699/patrika), [font](https://www.1001fonts.com/fragile-bombers-font.html)
-- Hyprland Kath: [wallpaper](https://motionbgs.com/andvari-last-origin), [font](https://www.1001fonts.com/pixelon-font.html)
+- Hyprland Kath: original [wallpaper](https://motionbgs.com/andvari-last-origin), [font](https://www.1001fonts.com/pixelon-font.html); this fork uses a custom `hyprland_kath_mocha.mp4` background.
 - Pixel sakura: [wallpaper](https://imgur.com/gallery/sakura-tree-with-petals-flying-off-t5tg4N8), [font](https://www.1001fonts.com/arcadeclassic-font.html)
 - Jake the dog: [wallpaper](https://motionbgs.com/jake-the-dog), [font](https://fontmeme.com/fonts/thunderman-font/)
   
 ## Supporting project
 
-You can support me simply by dropping a **star** on **[github](https://github.com/Keyitdev/sddm-astronaut-theme)** or giving a **subscription** on **[YouTube](http://www.youtube.com/channel/UCVoGVyAP2sHPQyegwBMJKyQ?sub_confirmation=1)**.
+You can support the original author by dropping a **star** on **[github](https://github.com/Keyitdev/sddm-astronaut-theme)** or giving a **subscription** on **[YouTube](http://www.youtube.com/channel/UCVoGVyAP2sHPQyegwBMJKyQ?sub_confirmation=1)**.
 
-If you enjoyed it and would like to show your appreciation, you can make a **[donation](https://ko-fi.com/keyitdev)** using **[kofi](https://ko-fi.com/keyitdev)**.
+If you enjoyed the theme and would like to show your appreciation, you can make a **[donation](https://ko-fi.com/keyitdev)** using **[kofi](https://ko-fi.com/keyitdev)**.
 
 [![Ko-fi](https://img.shields.io/badge/support_me_on_ko--fi-F16061?style=for-the-badge&logo=kofi&logoColor=f5f5f5)](https://ko-fi.com/keyitdev)
 
